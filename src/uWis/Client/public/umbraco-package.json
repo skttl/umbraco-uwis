@@ -1,0 +1,14 @@
+{
+  "id": "uWis",
+  "name": "uWis",
+  "version": "0.0.0",
+  "allowPackageTelemetry": true,
+  "extensions": [
+    {
+      "name": "uWis Bundle",
+      "alias": "uWis.Bundle",
+      "type": "bundle",
+      "js": "/App_Plugins/uWis/u-gum.js"
+    }
+  ]
+}
