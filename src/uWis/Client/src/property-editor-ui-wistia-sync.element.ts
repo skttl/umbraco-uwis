@@ -2,10 +2,10 @@ import { html, customElement, property, state } from '@umbraco-cms/backoffice/ex
 import type { UmbPropertyEditorUiElement } from '@umbraco-cms/backoffice/property-editor';
 import { UmbLitElement } from '@umbraco-cms/backoffice/lit-element';
 import { WistiaValue } from './types/wistiavalue';
-import { AssetStatus, Ugum } from './api';
+import { AssetStatus, Uwis } from './api';
 
 @customElement('uwis-property-editor-ui-wistia-sync')
-export class UGumPropertyEditorUIWistiaSyncElement extends UmbLitElement implements UmbPropertyEditorUiElement {
+export class UwisPropertyEditorUIWistiaSyncElement extends UmbLitElement implements UmbPropertyEditorUiElement {
   @property() public set value(newValue: WistiaValue | undefined | null) { this._value = newValue; this.#fetchStatus(); }
   public get value(): WistiaValue | undefined | null { return this._value; }
   @state() private _value: WistiaValue | undefined | null = null;
@@ -15,7 +15,7 @@ export class UGumPropertyEditorUIWistiaSyncElement extends UmbLitElement impleme
   #fetchStatus = async () => {
     if (!this.value?.WistiaAssetId) { this._status = null; return; }
     this._statusLoading = true;
-    const { data } = await Ugum.getStatus({ query: { assetId: this.value.WistiaAssetId } });
+    const { data } = await Uwis.getStatus({ query: { assetId: this.value.WistiaAssetId } });
     this._statusLoading = false;
     this._status = data as unknown as AssetStatus;
     if (this._status === AssetStatus.UNKNOWN || this._status === AssetStatus.PREPARING) setTimeout(() => this.#fetchStatus(), 5000);
@@ -50,5 +50,5 @@ export class UGumPropertyEditorUIWistiaSyncElement extends UmbLitElement impleme
   }
 }
 
-export default UGumPropertyEditorUIWistiaSyncElement;
-declare global { interface HTMLElementTagNameMap { 'uwis-property-editor-ui-wistia-sync': UGumPropertyEditorUIWistiaSyncElement; } }
+export default UwisPropertyEditorUIWistiaSyncElement;
+declare global { interface HTMLElementTagNameMap { 'uwis-property-editor-ui-wistia-sync': UwisPropertyEditorUIWistiaSyncElement; } }

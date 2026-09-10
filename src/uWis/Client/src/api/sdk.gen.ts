@@ -18,7 +18,7 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
     meta?: Record<string, unknown>;
 };
 
-export class Ugum {
+export class Uwis {
     public static getStatus<ThrowOnError extends boolean = false>(options?: Options<GetStatusData, ThrowOnError>) {
         return (options?.client ?? _heyApiClient).get<GetStatusResponses, GetStatusErrors, ThrowOnError>({
             security: [

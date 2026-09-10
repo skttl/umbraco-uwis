@@ -1,6 +1,6 @@
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text.Json.Serialization;
 using Microsoft.Extensions.Options;
 using uWis.Configuration;
 
@@ -8,66 +8,71 @@ namespace uWis.Services;
 
 public sealed class WistiaService : IWistiaService
 {
-    private readonly HttpClient _client;
-    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly HttpClient _apiClient;
+    private readonly HttpClient _uploadClient;
     private readonly WistiaSettings _settings;
 
     public WistiaService(IOptionsMonitor<WistiaSettings> options, IHttpClientFactory httpClientFactory)
     {
         _settings = options.CurrentValue;
-        _httpClientFactory = httpClientFactory;
-        _client = httpClientFactory.CreateClient(nameof(WistiaService));
-        _client.BaseAddress = new Uri(_settings.ApiBasePath.TrimEnd('/') + "/");
-        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _settings.ApiKey);
+        _apiClient = httpClientFactory.CreateClient(nameof(WistiaService));
+        _apiClient.BaseAddress = new Uri(_settings.ApiBasePath.TrimEnd('/') + "/");
+        _apiClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _settings.ApiKey);
+        _apiClient.DefaultRequestHeaders.Add("X-Wistia-API-Version", _settings.ApiVersion);
+
+        _uploadClient = httpClientFactory.CreateClient("WistiaUpload");
+        _uploadClient.BaseAddress = new Uri(_settings.UploadBasePath.TrimEnd('/') + "/");
+        _uploadClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _settings.ApiKey);
     }
 
     public async Task<WistiaAsset?> GetAsset(string assetId, CancellationToken cancellationToken = default)
     {
-        using var response = await _client.GetAsync($"v1/video/assets/{assetId}", cancellationToken);
-        if (response.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        ArgumentException.ThrowIfNullOrWhiteSpace(assetId);
+        using var response = await _apiClient.GetAsync($"modern/medias/{Uri.EscapeDataString(assetId)}", cancellationToken);
+        if (response.StatusCode == HttpStatusCode.NotFound) return null;
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<WistiaAsset>(cancellationToken);
+        var media = await response.Content.ReadFromJsonAsync<WistiaMediaResponse>(cancellationToken)
+            ?? throw new InvalidOperationException("Wistia returned an empty media response.");
+        return Map(media);
     }
 
     public async Task<WistiaAsset> CreateAsset(byte[] bytes, string? title = null, string? creatorId = null, string? externalId = null, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(_settings.ApiKey);
-        ArgumentException.ThrowIfNullOrWhiteSpace(_settings.SourceId);
-        var request = new CreateUploadRequest
-        {
-            SourceId = _settings.SourceId, Format = _settings.Format, Resolution = _settings.Resolution,
-            Title = title, Description = creatorId,
-            Metadata = string.IsNullOrWhiteSpace(externalId) ? null : new Dictionary<string, string> { ["external_id"] = externalId },
-            KeepOriginal = _settings.KeepOriginal,
-        };
-        using var createResponse = await _client.PostAsJsonAsync("v1/video/assets/upload", request, cancellationToken);
-        createResponse.EnsureSuccessStatusCode();
-        var asset = await createResponse.Content.ReadFromJsonAsync<WistiaAsset>(cancellationToken)
-            ?? throw new InvalidOperationException("Wistia returned an empty asset response.");
-        ArgumentException.ThrowIfNullOrWhiteSpace(asset.UploadUrl);
-        ArgumentException.ThrowIfNullOrWhiteSpace(asset.AssetId);
-        using var content = new ByteArrayContent(bytes);
-        content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-        using var uploadResponse = await _httpClientFactory.CreateClient("WistiaUpload").PutAsync(asset.UploadUrl, content, cancellationToken);
-        uploadResponse.EnsureSuccessStatusCode();
-        return await GetAsset(asset.AssetId, cancellationToken)
-            ?? throw new InvalidOperationException($"Wistia asset '{asset.AssetId}' could not be read after upload.");
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(bytes.Length);
+
+        using var form = new MultipartFormDataContent();
+        form.Add(new ByteArrayContent(bytes), "file", title ?? "umbraco-video.mp4");
+        if (!string.IsNullOrWhiteSpace(title)) form.Add(new StringContent(title), "name");
+        if (!string.IsNullOrWhiteSpace(_settings.ProjectId)) form.Add(new StringContent(_settings.ProjectId), "project_id");
+        if (!string.IsNullOrWhiteSpace(creatorId)) form.Add(new StringContent(creatorId), "description");
+
+        using var response = await _uploadClient.PostAsync(string.Empty, form, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        var media = await response.Content.ReadFromJsonAsync<WistiaMediaResponse>(cancellationToken)
+            ?? throw new InvalidOperationException("Wistia returned an empty upload response.");
+        ArgumentException.ThrowIfNullOrWhiteSpace(media.HashedId);
+        return Map(media);
     }
 
     public async Task DeleteAsset(string assetId, CancellationToken cancellationToken = default)
     {
-        using var response = await _client.DeleteAsync($"v1/video/assets/{assetId}", cancellationToken);
-        if (response.StatusCode != System.Net.HttpStatusCode.NotFound) response.EnsureSuccessStatusCode();
+        using var response = await _apiClient.DeleteAsync($"v1/medias/{Uri.EscapeDataString(assetId)}.json", cancellationToken);
+        if (response.StatusCode != HttpStatusCode.NotFound) response.EnsureSuccessStatusCode();
     }
 
-    private sealed class CreateUploadRequest
+    private static WistiaAsset Map(WistiaMediaResponse media)
     {
-        [JsonPropertyName("source_id")] public string? SourceId { get; init; }
-        [JsonPropertyName("format")] public string? Format { get; init; }
-        [JsonPropertyName("resolution")] public string[]? Resolution { get; init; }
-        [JsonPropertyName("title")] public string? Title { get; init; }
-        [JsonPropertyName("description")] public string? Description { get; init; }
-        [JsonPropertyName("metadata")] public Dictionary<string, string>? Metadata { get; init; }
-        [JsonPropertyName("keep_original")] public bool KeepOriginal { get; init; }
+        var id = media.HashedId;
+        return new WistiaAsset
+        {
+            AssetId = id,
+            Status = media.Status,
+            Output = new WistiaOutput
+            {
+                StatusUrl = id is null ? null : $"/modern/medias/{id}",
+                PlaybackUrl = id is null ? null : $"https://fast.wistia.net/embed/iframe/{id}"
+            }
+        };
     }
 }

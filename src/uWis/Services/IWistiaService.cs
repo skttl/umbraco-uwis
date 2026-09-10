@@ -11,16 +11,19 @@ public interface IWistiaService
 
 public sealed class WistiaAsset
 {
-    [JsonPropertyName("asset_id")]
-    public string? AssetId { get; set; }
-    public string? Status { get; set; }
-    public WistiaOutput? Output { get; set; }
-    [JsonPropertyName("upload_url")]
-    public string? UploadUrl { get; set; }
+    public string? AssetId { get; init; }
+    public string? Status { get; init; }
+    public WistiaOutput? Output { get; init; }
 }
 
 public sealed class WistiaOutput
 {
-    [JsonPropertyName("status_url")] public string? StatusUrl { get; set; }
-    [JsonPropertyName("playback_url")] public string? PlaybackUrl { get; set; }
+    public string? StatusUrl { get; init; }
+    public string? PlaybackUrl { get; init; }
+}
+
+internal sealed class WistiaMediaResponse
+{
+    [JsonPropertyName("hashed_id")] public string? HashedId { get; init; }
+    [JsonPropertyName("status")] public string? Status { get; init; }
 }

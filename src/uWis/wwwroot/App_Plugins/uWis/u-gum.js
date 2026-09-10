@@ -1,13 +1,13 @@
-const t = {
+const i = {
   name: "uWis Entry Point",
   type: "backofficeEntryPoint",
   alias: "uWis.EntryPoint",
   js: () => import("./entrypoint-Ds0YLQXJ.js")
-}, e = {
+}, t = {
   type: "propertyEditorUi",
   alias: "uWis.PropertyEditorUi.WistiaSync",
   name: "Wistia Sync",
-  element: () => import("./property-editor-ui-wistia-sync.element-DVj12vzL.js"),
+  element: () => import("./property-editor-ui-wistia-sync.element-D4S3Ysrs.js"),
   meta: {
     label: "Wistia Sync",
     icon: "icon-video",
@@ -24,7 +24,7 @@ const t = {
       ]
     }
   }
-}, i = {
+}, e = {
   type: "propertyEditorSchema",
   name: "Wistia Sync",
   alias: "uWis.Sync",
@@ -32,9 +32,9 @@ const t = {
     defaultPropertyEditorUiAlias: "uWis.PropertyEditorUi.WistiaSync"
   }
 }, o = [
+  i,
   t,
-  e,
-  i
+  e
 ];
 export {
   o as manifests
