@@ -50,15 +50,7 @@ Umbraco__Wistia__ApiVersion=2026-07
 
 Create an access token with upload, read, and delete permissions in Wistia's developer settings.
 
-<!-- Screenshot needed: Wistia developer settings showing token creation and permissions. Do not include the actual token. -->
-
-![Wistia API token](../docs/wistia_api_token.png)
-
 Find the hashed project ID in the Wistia project URL or project settings.
-
-<!-- Screenshot needed: Wistia project settings showing the hashed project ID. -->
-
-![Wistia project ID](../docs/wistia_project.png)
 
 See Wistia's [Upload API documentation](https://docs.wistia.com/reference/post_) and [authentication documentation](https://docs.wistia.com/docs/authentication).
 
@@ -74,10 +66,6 @@ uWis adds a Wistia Sync property editor to the Umbraco backoffice.
 
 The upload property and the Wistia Sync property must be on the same content type.
 
-<!-- Screenshot needed: Umbraco Data Type editor showing Wistia Sync and Upload Property Alias. -->
-
-![Wistia Sync data type settings](../docs/umbraco_wistia_sync_data_type.png)
-
 ## Upload and synchronization
 
 When an editor saves an item, uWis checks whether the configured upload property changed. If it did, uWis:
@@ -90,10 +78,6 @@ When an editor saves an item, uWis checks whether the configured upload property
 Wistia processes uploaded media asynchronously. The backoffice editor polls Wistia and shows Preparing, Ready, or Error status.
 
 For a video that existed before the sync property was added, save the item again to trigger synchronization.
-
-<!-- Screenshot needed: Umbraco media or content item showing a Wistia video synchronized successfully. -->
-
-![Synchronized Wistia video in Umbraco](../docs/umbraco_wistia_media.png)
 
 ## Stored value
 
