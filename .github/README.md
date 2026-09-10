@@ -85,7 +85,7 @@ When an editor saves an item, uWis checks whether the configured upload property
 1. Deletes the previously linked Wistia media, if one exists.
 2. Uploads the new file through Wistia's multipart Upload API.
 3. Places the media in the configured Wistia project.
-4. Stores the Wistia media ID and iframe URL in the sync property.
+4. Stores the Wistia media ID and HLS playback URL in the sync property.
 
 Wistia processes uploaded media asynchronously. The backoffice editor polls Wistia and shows Preparing, Ready, or Error status.
 
@@ -103,25 +103,28 @@ The sync property stores a JSON value converted to uWis.Models.WistiaValue:
 {
   "Src": "/media/example/video.mp4",
   "WistiaAssetId": "abc123xyz",
-  "PlaybackUrl": "https://fast.wistia.net/embed/iframe/abc123xyz"
+  "PlaybackUrl": "https://fast.wistia.net/embed/medias/abc123xyz.m3u8"
 }
 ~~~
 
-WistiaAssetId is the Wistia hashed media ID. PlaybackUrl is the Wistia iframe URL.
+WistiaAssetId is the Wistia hashed media ID. PlaybackUrl is Wistia's direct HLS manifest URL.
 
-## Embed a video
+## Play a video
+
+Use the HLS URL in a video element:
 
 ~~~cshtml
 @if (Model.WistiaVideo?.PlaybackUrl is { } url)
 {
-    <iframe
+    <video
         src="@url"
-        style="width: 100%; border: none; aspect-ratio: 16/9;"
-        allow="autoplay; fullscreen"
-        allowfullscreen>
-    </iframe>
+        controls
+        style="width: 100%; aspect-ratio: 16/9;">
+    </video>
 }
 ~~~
+
+Browsers with native HLS support can play the manifest directly. For other browsers, use an HLS-compatible player such as hls.js. Direct HLS playback bypasses the Wistia player, including its analytics and player customizations. See Wistia's [asset URL documentation](https://docs.wistia.com/docs/asset-urls).
 
 ## Troubleshooting
 
@@ -137,13 +140,13 @@ WistiaAssetId is the Wistia hashed media ID. PlaybackUrl is the Wistia iframe UR
 
 Wistia processes uploaded media asynchronously. Check the media in Wistia and inspect its processing status.
 
-### The player does not load
+### The HLS video does not load
 
 - Confirm that the Wistia media ID is valid.
-- Check Wistia privacy and embedding settings.
 - Confirm that the media has finished processing.
+- Use an HLS-compatible player when the browser does not support HLS natively.
+- Remember that direct HLS playback does not use Wistia's player embedding settings.
 
 ## Contributing
 
 The repository includes a test site for local development. Keep Wistia credentials in local secrets or appsettings.Development.json, never in committed source.
-

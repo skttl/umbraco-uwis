@@ -71,7 +71,7 @@ public sealed class WistiaService : IWistiaService
             Output = new WistiaOutput
             {
                 StatusUrl = id is null ? null : $"/modern/medias/{id}",
-                PlaybackUrl = id is null ? null : $"https://fast.wistia.net/embed/iframe/{id}"
+                PlaybackUrl = id is null ? null : $"https://fast.wistia.net/embed/medias/{id}.m3u8"
             }
         };
     }
